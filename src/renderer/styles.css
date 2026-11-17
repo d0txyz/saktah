@@ -195,3 +195,12 @@ select {
 
 .practice-hint { margin: 0 0 12px; min-height: 0; }
 .practice-hint:empty { display: none; }
+
+/* Hide my face: the preview is blurred past recognition. Only the picture on
+   screen changes; the SDK still reads the camera as before. */
+.hide-face .cam-frame video { filter: blur(40px) saturate(0.6); transform: scaleX(-1) scale(1.3); }
+.hide-face .cam-thumb video { filter: blur(16px) saturate(0.6); transform: scaleX(-1) scale(1.3); }
+.face-toggle { margin-top: 8px; }
+
+/* Desktop app: content scrolls with the wheel, no scrollbar chrome. */
+* { scrollbar-width: none; }

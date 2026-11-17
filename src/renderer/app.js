@@ -15,7 +15,7 @@ const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 let apiKey = params.get('key') || '';
 
-const AUTO_END_US = 1.8 * S; // silence after reciting that ends a phrase (held vowels can show 1.3 s of still lips)
+const AUTO_END_US = 2.2 * S; // quiet after reciting that ends a phrase: room for a held vowel (1.3 s seen) or a full mid-phrase breath
 const SETTLE_US = 8 * S;     // trace needed before calibration
 const CUE_US = 3.5 * S;      // one guided breath in or out
 
@@ -217,6 +217,20 @@ $('btn-consent').addEventListener('click', async () => {
   show('setup');
   try {
     await startCamera();
+    // Developer shortcut for re-takes (main passes these only in dev mode):
+    // reuse a saved calibration and open practice at a given phrase.
+    const saved = params.get('calib');
+    if (saved) {
+      calib = { ...JSON.parse(saved), reused: true };
+      console.info('calibration reused', JSON.stringify(calib));
+      setupText('Getting ready', 'Sit still for a moment while the camera settles.');
+      requestAnimationFrame(hintLoop);
+      await waitFor(() => sig.status === ProcessingStatus.kRunning && sig.firstT && sig.lastT - sig.firstT > 3 * S, 30000);
+      enterPractice();
+      const start = Number(params.get('pos') || 0);
+      if (start > 0 && start < practice.order.length) { practice.pos = start; armPhrase(); }
+      return;
+    }
     runCalibration();
   } catch (e) {
     console.error(e);
@@ -554,6 +568,16 @@ function practiceTick() {
     setState('Camera off', '');
   }
 }
+
+// Hide my face: blur the camera preview (also on by default with ?blur=1).
+function setHideFace(on) {
+  document.body.classList.toggle('hide-face', on);
+  for (const b of document.querySelectorAll('.face-toggle')) b.textContent = on ? 'Show my face' : 'Hide my face';
+}
+for (const b of document.querySelectorAll('.face-toggle')) {
+  b.addEventListener('click', () => { setHideFace(!document.body.classList.contains('hide-face')); b.blur(); });
+}
+setHideFace(params.get('blur') === '1');
 
 $('sel-surah').addEventListener('change', (e) => { loadSurah(Number(e.target.value)); e.target.blur(); });
 for (const b of document.querySelectorAll('.seg button')) {

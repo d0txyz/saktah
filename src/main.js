@@ -3,7 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { app, BrowserWindow, session } = require('electron');
+const { app, BrowserWindow, session, screen } = require('electron');
 const { bindSmartSpectraIpc } = require('@smartspectra/node-sdk/main');
 
 // The API key comes from the environment or a local .env.local file next to
@@ -43,6 +43,16 @@ function createWindow() {
 
   bindSmartSpectraIpc(win);
 
+  // Screen recording for the demo (SAKTAH_PIN="x,y"): put the page at a fixed
+  // spot, keep it there and on top, so the recorded area never drifts.
+  const pin = (process.env.SAKTAH_PIN || '').match(/^(\d+),(\d+)$/);
+  if (pin) {
+    win.setContentBounds({ x: Number(pin[1]), y: Number(pin[2]), width: 1264, height: 781 });
+    win.setMovable(false);
+    win.setResizable(false);
+    win.setAlwaysOnTop(true);
+  }
+
   // Let the page stop the SDK engine before the window and process go away;
   // closing with frames still in flight crashed the native module.
   let closing = false;
@@ -66,12 +76,35 @@ function createWindow() {
   if (key) query.key = key;
   if (dev) query.dev = '1';
   if (dev && /^\d+x\d+$/.test(process.env.SAKTAH_CAPTURE || '')) query.cap = process.env.SAKTAH_CAPTURE;
+  if (process.env.SAKTAH_BLUR === '1') query.blur = '1';
+  if (dev && process.env.SAKTAH_CALIB) query.calib = process.env.SAKTAH_CALIB;
+  if (dev && /^\d+$/.test(process.env.SAKTAH_POS || '')) query.pos = process.env.SAKTAH_POS;
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'), { query });
+
+  // Developer snapshot of the first screen (SAKTAH_SNAP=out.png), then quit.
+  if (process.env.SAKTAH_SNAP) {
+    win.webContents.once('did-finish-load', () => setTimeout(async () => {
+      const img = await win.webContents.capturePage();
+      fs.writeFileSync(process.env.SAKTAH_SNAP, img.toPNG());
+      app.quit();
+    }, 1500));
+  }
 
   if (process.env.SAKTAH_DEVTOOLS === '1') win.webContents.openDevTools({ mode: 'detach' });
   // Developer recordings (SAKTAH_DEV=1): per-phrase signal windows and full
   // exports arrive as console lines and are appended to ./recordings
   // (git-ignored). Breathing trace and talking flags only: no video exists.
+  // Developer log: where the page sits on screen, in physical pixels, so a
+  // screen recorder can capture exactly the app.
+  if (process.env.SAKTAH_LOG === '1') {
+    const where = () => {
+      const r = screen.dipToScreenRect(win, win.getContentBounds());
+      console.log(`${Date.now()} WINDOW ${r.x} ${r.y} ${r.width} ${r.height}`);
+    };
+    win.once('ready-to-show', where);
+    win.on('moved', where);
+    win.on('resized', where);
+  }
   const recFile = path.join(app.getAppPath(), 'recordings', `session-${Date.now()}.jsonl`);
   const log = process.env.SAKTAH_LOG === '1';
   win.webContents.on('console-message', (e) => {
@@ -85,7 +118,7 @@ function createWindow() {
       return;
     }
     // Developer log: mirror the page console to stdout (SAKTAH_LOG=1).
-    if (log) console.log(`[renderer:${e.level}] ${message}`);
+    if (log) console.log(`${Date.now()} [renderer:${e.level}] ${message}`);
   });
 }
 

@@ -48,10 +48,11 @@ The calibration step picks whichever trace (chest or abdomen) agrees best with t
 - **Storage**: none. No video, images or readings are written to disk. Results live in memory and are gone when the window closes.
 - **Sharing**: none. Saktah has no server, no account and no analytics.
 - **AI services**: none. SmartSpectra's optional LLM Insights feature is not used.
+- **Hide my face**: one click blurs the camera preview past recognition (handy when screen sharing in a class). Only the picture on screen changes; the SDK keeps reading the camera.
 - **Stopping**: the Stop camera button releases the camera at once; closing the window ends everything.
 - **Not a medical tool.** Saktah is a recitation aid. It shows no heart rate or breathing rate and makes no health claims.
 
-There is one developer mode, off by default. Started with `SAKTAH_DEV=1`, the app writes each phrase's breathing trace and talking flags (numbers only, never images) to a local, git-ignored `recordings/` folder for tuning the detector, and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> adds the full last three minutes. Without that variable nothing is written anywhere.
+There is one developer mode, off by default. Started with `SAKTAH_DEV=1`, the app writes each phrase's breathing trace and talking flags (numbers only, never images) to a local, git-ignored `recordings/` folder for tuning the detector, and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> adds the full last three minutes. Without that variable nothing is written anywhere. The other `SAKTAH_*` variables in `src/main.js` exist only for filming the demo (pin the window, reuse a calibration) and change nothing in a normal launch.
 
 ## Run it
 

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; worker-src 'self' blob:; media-src 'self' blob: mediastream:;">
+  <title>Saktah</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- 1. Welcome and consent -->
+    <section class="screen" id="screen-welcome" data-active>
+      <div class="welcome">
+        <div class="welcome-mark" lang="ar" dir="rtl">سَكْتَة</div>
+        <h1>Saktah</h1>
+        <p class="lede">Practise reciting the Qur'an one breath at a time. Your webcam notices when you take a breath in the middle of a phrase, so you learn to breathe only where a stop is allowed.</p>
+
+        <div class="consent">
+          <h2>Before the camera turns on</h2>
+          <ul>
+            <li><strong>What it watches.</strong> Your face and upper chest, to follow your breathing and whether your lips are moving. No microphone is used.</li>
+            <li><strong>Where it is processed.</strong> On this computer, inside the SmartSpectra SDK. No video, image or breathing reading is sent anywhere.</li>
+            <li><strong>What goes online.</strong> Only the SDK's sign-in check of the developer key. SDK usage telemetry is switched off in Saktah.</li>
+            <li><strong>What is kept.</strong> Nothing. Results live in memory and are gone when you close the app. Stop the camera at any time with the Stop button or by closing the window.</li>
+            <li><strong>What it is not.</strong> A recitation aid, not a health or medical tool. It makes no claims about your body.</li>
+          </ul>
+        </div>
+
+        <div class="key-row" id="key-row" hidden>
+          <label for="key-input">SmartSpectra API key</label>
+          <input id="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key from physiology.presagetech.com">
+          <p class="fine">Kept in memory for this session only.</p>
+        </div>
+
+        <button class="primary" id="btn-consent" type="button">Turn on the camera and begin</button>
+        <p class="fine">You can say no: close the window and nothing has been recorded.</p>
+      </div>
+    </section>
+
+    <!-- 2. Setup: position and calibrate -->
+    <section class="screen" id="screen-setup">
+      <div class="setup">
+        <div class="setup-camera">
+          <div class="cam-frame"><video id="cam-big" autoplay playsinline muted></video><div class="cam-guide"></div></div>
+          <p class="hint" id="setup-hint">Starting the camera…</p>
+        </div>
+        <div class="setup-steps">
+          <p class="eyebrow">Getting ready</p>
+          <h2 id="setup-title">Sit so your face and shoulders are in view</h2>
+          <p class="setup-body" id="setup-body">Good, even light on your face works best. Sit still and breathe normally while the camera settles.</p>
+          <div class="breath-cue" id="breath-cue" hidden>
+            <div class="cue-ring"><div class="cue-dot" id="cue-dot"></div></div>
+            <div class="cue-word" id="cue-word">Breathe in</div>
+          </div>
+          <canvas class="mini-strip" id="setup-strip" width="560" height="90"></canvas>
+          <div class="setup-actions">
+            <button class="ghost" id="btn-skip-calib" type="button" hidden>Use default settings</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Practice -->
+    <section class="screen" id="screen-practice">
+      <aside class="rail">
+        <div class="brand">Saktah</div>
+        <label class="field">
+          <span>Surah</span>
+          <select id="sel-surah"></select>
+        </label>
+        <div class="field">
+          <span>Breaks</span>
+          <div class="seg" role="radiogroup" aria-label="Where phrases break">
+            <button type="button" data-mode="ayah" role="radio">Ayah by ayah</button>
+            <button type="button" data-mode="stops" role="radio">Every stop</button>
+          </div>
+          <p class="fine" id="mode-note"></p>
+        </div>
+        <div class="tally">
+          <div><span class="num" id="t-clean">0</span><span class="lbl">one breath</span></div>
+          <div><span class="num" id="t-broken">0</span><span class="lbl">breath taken mid-phrase</span></div>
+        </div>
+        <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+        <p class="fine" id="progress-label"></p>
+        <div class="rail-foot">
+          <div class="cam-thumb"><video id="cam-small" autoplay playsinline muted></video><span class="live-dot" id="live-dot"></span></div>
+          <button class="ghost small" id="btn-finish" type="button">Finish</button>
+          <button class="ghost small" id="btn-stop" type="button">Stop camera</button>
+        </div>
+      </aside>
+
+      <main class="stage">
+        <div class="stage-top">
+          <div class="where" id="where"></div>
+          <div class="state" id="state"></div>
+        </div>
+        <div class="mushaf" id="mushaf" lang="ar" dir="rtl"></div>
+        <p class="hint warn practice-hint" id="practice-hint"></p>
+        <div class="verdict" id="verdict" hidden></div>
+        <div class="stage-bottom">
+          <canvas class="strip" id="strip" width="1200" height="120"></canvas>
+          <div class="legend">
+            <span><i class="sw sw-talk"></i>reciting</span>
+            <span><i class="sw sw-breath"></i>breath</span>
+            <span class="keys"><kbd>Space</kbd> done with phrase <kbd>R</kbd> try again <kbd>&larr;</kbd><kbd>&rarr;</kbd> move</span>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- 4. Summary -->
+    <section class="screen" id="screen-summary">
+      <div class="summary">
+        <p class="eyebrow">Session</p>
+        <h2 id="sum-title"></h2>
+        <div class="sum-grid">
+          <div><span class="num" id="sum-first"></span><span class="lbl">phrases in one breath on the first try</span></div>
+          <div><span class="num" id="sum-longest"></span><span class="lbl">longest phrase held in one breath</span></div>
+          <div><span class="num" id="sum-retry"></span><span class="lbl">phrases to practise again</span></div>
+        </div>
+        <div class="sum-list" id="sum-list" lang="ar" dir="rtl"></div>
+        <div class="sum-actions">
+          <button class="primary" id="btn-again" type="button">Practise the marked phrases</button>
+          <button class="ghost" id="btn-new" type="button">Choose another surah</button>
+        </div>
+        <p class="fine">Nothing from this session is saved. Qur'an text: Tanzil Project (tanzil.net).</p>
+      </div>
+    </section>
+
+    <div class="toast" id="toast" hidden></div>
+  </div>
+  <script src="../../dist/app.bundle.js"></script>
+</body>
+</html>

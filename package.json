@@ -1,0 +1,20 @@
+{
+  "name": "saktah",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Practise Qur'an recitation one breath at a time. Your webcam notices when you take a breath in the middle of a phrase.",
+  "main": "src/main.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "esbuild src/renderer/app.js --bundle --outfile=dist/app.bundle.js --platform=browser --format=iife --loader:.txt=text --log-level=warning",
+    "start": "npm run build && electron .",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@smartspectra/node-sdk": "latest"
+  },
+  "devDependencies": {
+    "electron": "43.8.1",
+    "esbuild": "^0.25.0"
+  }
+}
